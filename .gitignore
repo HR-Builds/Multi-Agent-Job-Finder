@@ -1,0 +1,12 @@
+__pycache__/
+*.pyc
+.venv/
+venv/
+.env
+.pytest_cache/
+*.egg-info/
+.DS_Store
+
+# ignore real resumes accidentally dropped in for local testing
+data/sample_resumes/*
+!data/sample_resumes/.gitkeep
