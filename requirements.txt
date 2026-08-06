@@ -1,0 +1,7 @@
+langchain
+langchain-core
+langchain-google-genai
+python-dotenv
+pydantic-settings
+pypdf
+python-docx
