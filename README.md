@@ -76,3 +76,53 @@
     │       └── test_resume_reader.py
     └── data/
         └── sample_resumes/
+
+
+
+Resume Upload
+     │
+     ▼
+┌──────────────────────┐
+│ Stage 1              │
+│ resume_reader.py     │
+│ PDF/DOCX → Text      │
+└──────────┬───────────┘
+           │ resume_text
+           ▼
+┌──────────────────────┐
+│ Stage 2              │
+│ analyzer.py          │
+│ Gemini                │
+│ Text → Profile +      │
+│ Skills + Queries      │
+└──────────┬───────────┘
+           │
+           │ search_queries
+           ▼
+┌──────────────────────┐
+│ Stage 3              │
+│ job_search_agent.py  │
+│ Gemini + Tavily       │
+│ Queries → Job URLs    │
+└──────────┬───────────┘
+           │
+           │ job URLs
+           ▼
+┌──────────────────────┐
+│ Stage 4              │
+│ job_scraper_agent.py │
+│ Gemini + scrape_url   │
+│ URLs → Job Details    │
+└──────────┬───────────┘
+           │
+           │ scraped jobs
+           ▼
+┌──────────────────────┐
+│ Stage 5              │
+│ writer.py             │
+│ Gemini                 │
+│ Jobs → Final Report   │
+└──────────┬───────────┘
+           │
+           ▼
+       FINAL RESULT
