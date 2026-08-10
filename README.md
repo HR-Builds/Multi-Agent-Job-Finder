@@ -1,128 +1,164 @@
-    # Project Spec: Resume → Job Matcher (Multi-agent)
+# Resume → Job Matcher
 
-    ## Overview
-    An extension of the existing Multi-Agent Research System pattern. The user uploads
-    their resume, and the system autonomously analyzes it, searches the web for matching
-    job openings, and returns a sorted list of relevant, recent postings.
+An AI-powered multi-agent job discovery system that analyzes a
+candidate's resume, generates optimized job-search queries, discovers
+relevant job openings through Tavily, extracts job information from
+public job pages, and presents the results in a structured format.
 
-    ## Input
-    - A single resume file (PDF or DOCX)
-    - No separate job description is required — keywords are derived entirely from the resume
+The system is designed around a resume-first workflow, meaning the user
+does not need to provide a separate job description. Candidate skills,
+experience, role, and search criteria are derived directly from the
+uploaded resume.
 
-    ## Pipeline
+---
 
-    | Stage | Component | Type | Purpose |
-    |---|---|---|---|
-    | 1 | Resume Reader | New tool | Extracts plain text from the uploaded PDF/DOCX resume |
-    | 2 | Analyzer | LCEL chain (no tool) | Reads resume text, identifies skills/experience/role, generates search keywords |
-    | 3 | Job Search Agent | ReAct agent (Tavily `web_search` tool) | Searches the web for job listings using the generated keywords |
-    | 4 | Job Scraper Agent | ReAct agent (`scrape_url` tool, reused) | Scrapes job pages for title, company, description, and posting date |
-    | 5 | Writer | LCEL chain | Compiles all found jobs into a report, sorted by posting date (newest first) |
+## Overview
 
-    **Full flow:**
-    Resume upload → text extraction → keyword generation → job search → job page scraping →
-    sorted job list with dates → presented to user
-
-    ## Component Count
-    - **1 new tool:** Resume reader (PDF/DOCX parser)
-    - **2 reused tools:** `web_search`, `scrape_url`
-    - **2 agents:** Job Search Agent, Job Scraper Agent
-    - **2 LCEL chains:** Analyzer chain, Writer chain
-
-    ## Design Decisions (confirmed)
-    - **Input scope:** Resume only — no target job description input from the user
-    - **Search source:** General web search (Tavily), not a dedicated jobs API (e.g. LinkedIn/Indeed)
-
-    ## Known Limitation
-    Because job search relies on general web search rather than a dedicated jobs API,
-    **posting dates will not always be reliable**. Many job pages don't clearly state a
-    posting date, or show a "last modified" date instead of the actual post date.
-
-    **Mitigation:** The writer chain must be explicitly instructed to output "date not
-    available" or "recently posted" when no reliable date is found — it must never
-    fabricate a date.
-
-    ## Next Steps
-    Build stage-by-stage, in this order:
-    1. Resume reader tool
-    2. Analyzer chain
-    3. Job search agent
-    4. Job scraper agent
-    5. Writer chain
-    6. Wire the full pipeline together (mirroring `pipeline.py` from the original research system)
-
-
-    resume-job-matcher/
-    ├── README.md
-    ├── requirements.txt
-    ├── requirements-dev.txt
-    ├── .env.example
-    ├── .gitignore
-    ├── src/
-    │   └── resume_job_matcher/
-    │       ├── __init__.py
-    │       ├── config.py
-    │       ├── tools/
-    │       │   ├── __init__.py
-    │       │   └── resume_reader.py      ← Stage 1 (ready)
-    │       ├── chains/
-    │       │   └── __init__.py            ← Stage 2 & 5 yahan aayengi
-    │       └── agents/
-    │           └── __init__.py            ← Stage 3 & 4 yahan aayengi
-    ├── tests/
-    │   ├── __init__.py
-    │   └── tools/
-    │       ├── __init__.py
-    │       └── test_resume_reader.py
-    └── data/
-        └── sample_resumes/
-
-
+The Resume → Job Matcher follows a multi-stage pipeline:
 
 Resume Upload
-     │
-     ▼
-┌──────────────────────┐
-│ Stage 1              │
-│ resume_reader.py     │
-│ PDF/DOCX → Text      │
-└──────────┬───────────┘
-           │ resume_text
-           ▼
-┌──────────────────────┐
-│ Stage 2              │
-│ analyzer.py          │
-│ Gemini                │
-│ Text → Profile +      │
-│ Skills + Queries      │
-└──────────┬───────────┘
-           │
-           │ search_queries
-           ▼
-┌──────────────────────┐
-│ Stage 3              │
-│ job_search_agent.py  │
-│ Gemini + Tavily       │
-│ Queries → Job URLs    │
-└──────────┬───────────┘
-           │
-           │ job URLs
-           ▼
-┌──────────────────────┐
-│ Stage 4              │
-│ job_scraper_agent.py │
-│ Gemini + scrape_url   │
-│ URLs → Job Details    │
-└──────────┬───────────┘
-           │
-           │ scraped jobs
-           ▼
-┌──────────────────────┐
-│ Stage 5              │
-│ writer.py             │
-│ Gemini                 │
-│ Jobs → Final Report   │
-└──────────┬───────────┘
-           │
-           ▼
-       FINAL RESULT
+→ Resume Text Extraction
+→ Resume Analysis
+→ Search Query Generation
+→ Web Job Search
+→ Job Page Scraping
+→ Job Data Processing
+→ Final Job Results
+
+The project uses Google Gemini for intelligent analysis and extraction,
+Tavily for web search, and deterministic Python processing for result
+normalization, deduplication, sorting, and filtering.
+
+---
+
+## Key Features
+
+- Upload resumes in PDF or DOCX format
+- Extract resume text automatically
+- Analyze candidate experience and technical skills
+- Identify the most suitable job role
+- Generate optimized job-search queries
+- Search the web using Tavily
+- Discover real job posting URLs
+- Scrape publicly accessible job pages
+- Extract:
+  - Job title
+  - Company
+  - Location
+  - Employment type
+  - Short job description
+  - Posting date
+  - Job URL
+- Remove duplicate job postings
+- Sort jobs by reliable posting date
+- Handle unavailable posting dates safely
+- Limit the number of jobs processed
+- Prepare structured results for Streamlit
+- Minimize unnecessary LLM token usage
+
+---
+
+## Architecture
+
+```text
+                         Resume
+                           │
+                           ▼
+                 ┌──────────────────┐
+                 │ Resume Reader    │
+                 │ PDF / DOCX       │
+                 └────────┬─────────┘
+                          │
+                          ▼
+                 ┌──────────────────┐
+                 │ Analyzer Chain   │
+                 │ Google Gemini    │
+                 └────────┬─────────┘
+                          │
+                  Candidate Profile
+                  + Search Queries
+                          │
+                          ▼
+                 ┌──────────────────┐
+                 │ Job Search Agent │
+                 │ Gemini + Tavily  │
+                 └────────┬─────────┘
+                          │
+                       Job URLs
+                          │
+                          ▼
+                 ┌──────────────────┐
+                 │ Job Scraper      │
+                 │ Agent            │
+                 │ Gemini + Tool    │
+                 └────────┬─────────┘
+                          │
+                   Structured Jobs
+                          │
+                          ▼
+               ┌──────────────────────┐
+               │ Job Result Processor │
+               │ Python               │
+               └──────────┬───────────┘
+                          │
+             ┌────────────┼────────────┐
+             │            │            │
+          Normalize   Deduplicate    Sort
+             │            │            │
+             └────────────┼────────────┘
+                          │
+                          ▼
+                    Final Results
+                          │
+                          ▼
+                    Streamlit UI
+
+
+
+Project Structure
+
+
+resume-job-matcher/
+│
+├── README.md
+├── requirements.txt
+├── requirements-dev.txt
+├── .env
+├── .env.example
+├── .gitignore
+│
+├── data/
+│   └── sample_resumes/
+│
+├── src/
+│   └── resume_job_matcher/
+│       │
+│       ├── __init__.py
+│       ├── config.py
+│       ├── pipeline.py
+│       │
+│       ├── tools/
+│       │   ├── __init__.py
+│       │   ├── resume_reader.py
+│       │   └── scrape_url.py
+│       │
+│       ├── chains/
+│       │   ├── __init__.py
+│       │   └── analyzer.py
+│       │
+│       ├── agents/
+│       │   ├── __init__.py
+│       │   ├── job_search_agent.py
+│       │   └── job_scraper_agent.py
+│       │
+│       └── processors/
+│           ├── __init__.py
+│           └── job_result_processor.py
+│
+├── app.py
+│
+└── tests/
+    ├── __init__.py
+    └── tools/
+        ├── __init__.py
+        └── test_resume_reader.py
