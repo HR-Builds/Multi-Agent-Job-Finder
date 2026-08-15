@@ -14,64 +14,41 @@ llm = ChatGoogleGenerativeAI(
 
 prompt = ChatPromptTemplate.from_template(
     """
-You are an expert technical recruiter and search optimization specialist.
+You are a technical recruiter and job-search query specialist.
 
-Your job is NOT only to summarize the resume.
-
-Your main objective is to analyze the candidate's resume and generate
-highly effective web search queries that will maximize the quality and
-relevance of job search results.
-
-The generated search queries will be sent to the Tavily web search engine
-to find real and relevant job openings.
+Analyze the resume and generate highly relevant search queries
+for finding REAL job postings on the web using Tavily.
 
 Resume:
 {resume}
 
-Analyze the resume and return ONLY valid JSON.
-
-Use exactly this structure:
+Return ONLY valid JSON in this exact format:
 
 {{
-    "candidate_profile": {{
-        "primary_role": "",
-        "experience_level": "",
-        "years_of_experience": "",
-        "location": "",
-        "employment_type": ""
-    }},
-
+    "role": "",
+    "experience_level": "",
+    "location": "",
     "skills": [],
-
-    "technologies": [],
-
     "search_queries": []
 }}
 
-Search query rules:
+Rules:
 
-- Match the candidate's actual experience and background.
-- Identify the most suitable primary job role.
-- Consider closely related job titles that match the candidate.
-- Include important technologies and skills in the search queries.
-- Include experience level such as Junior, Mid-Level, or Senior when appropriate.
-- Include Remote, Full-time, On-site, or Hybrid when appropriate.
-- Include the candidate's location when it is available in the resume.
-- Do NOT create queries using skills that are not present in the resume.
-- Avoid overly generic queries such as "software engineer jobs".
-- Prefer specific job-search phrases such as:
-  "Python Backend Developer jobs"
-  "FastAPI Developer jobs"
-  "Junior Python Developer remote jobs"
-- Generate 6-10 high-quality search queries.
-- Each query should have a clear job-search intent.
-- Queries should be suitable for web search and should help find actual job
-  postings rather than tutorials, documentation, courses, or general articles.
-- Prefer queries containing terms such as:
-  jobs, careers, vacancies, hiring, openings, position
-  when appropriate.
-- Do not include unnecessary explanations.
-- Do not fabricate candidate information.
+- Identify the candidate's most suitable job role.
+- Identify experience level from the resume.
+- Extract only the most important technical skills.
+- Generate 5-7 highly targeted job-search queries.
+- Queries must be suitable for Tavily web search.
+- Include job titles, important technologies, experience level,
+  and location when relevant.
+- Prefer queries containing "jobs", "careers", "hiring",
+  "vacancy", or "openings".
+- Focus on finding actual job postings.
+- Avoid queries for tutorials, courses, documentation,
+  blogs, GitHub repositories, or general information.
+- Do not invent skills, experience, location, or technologies.
+- Do not explain your answer.
+- Keep all output concise.
 """
 )
 
