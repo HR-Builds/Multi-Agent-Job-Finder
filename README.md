@@ -1,164 +1,337 @@
-# Resume → Job Matcher
+# 🔎 CareerLens — Multi-Agent Job Finder
 
-An AI-powered multi-agent job discovery system that analyzes a
-candidate's resume, generates optimized job-search queries, discovers
-relevant job openings through Tavily, extracts job information from
-public job pages, and presents the results in a structured format.
+> **AI-powered multi-agent job discovery and career research platform**
 
-The system is designed around a resume-first workflow, meaning the user
-does not need to provide a separate job description. Candidate skills,
-experience, role, and search criteria are derived directly from the
-uploaded resume.
+CareerLens is an AI-powered job finder that uses a **multi-agent architecture** to help users discover relevant job opportunities based on their resume, skills, experience, and career goals.
 
----
+Instead of manually searching through hundreds of job listings, CareerLens analyzes the user's resume and intelligently researches available opportunities to identify jobs that best match their profile.
 
-## Overview
+## 🚀 Live Demo
 
-The Resume → Job Matcher follows a multi-stage pipeline:
-
-Resume Upload
-→ Resume Text Extraction
-→ Resume Analysis
-→ Search Query Generation
-→ Web Job Search
-→ Job Page Scraping
-→ Job Data Processing
-→ Final Job Results
-
-The project uses Google Gemini for intelligent analysis and extraction,
-Tavily for web search, and deterministic Python processing for result
-normalization, deduplication, sorting, and filtering.
+🌐 **Try CareerLens:**
+https://careenlens.streamlit.app/
 
 ---
 
-## Key Features
+## ✨ Features
 
-- Upload resumes in PDF or DOCX format
-- Extract resume text automatically
-- Analyze candidate experience and technical skills
-- Identify the most suitable job role
-- Generate optimized job-search queries
-- Search the web using Tavily
-- Discover real job posting URLs
-- Scrape publicly accessible job pages
-- Extract:
-  - Job title
-  - Company
-  - Location
-  - Employment type
-  - Short job description
-  - Posting date
-  - Job URL
-- Remove duplicate job postings
-- Sort jobs by reliable posting date
-- Handle unavailable posting dates safely
-- Limit the number of jobs processed
-- Prepare structured results for Streamlit
-- Minimize unnecessary LLM token usage
+* 📄 **Resume Upload**
+
+  * Upload your resume in PDF or DOCX format.
+  * Automatically extracts relevant candidate information.
+
+* 🤖 **Multi-Agent AI System**
+
+  * Uses specialized AI agents for different stages of the job-search process.
+  * Agents work together to analyze and research opportunities.
+
+* 🔍 **Intelligent Job Research**
+
+  * Searches for relevant job opportunities based on candidate information.
+  * Reduces the need for manual job searching.
+
+* 🧠 **Resume Analysis**
+
+  * Identifies skills, experience, technologies, and professional strengths from the resume.
+
+* 🎯 **Job Matching**
+
+  * Evaluates how well job opportunities match the candidate's profile.
+
+* 📊 **AI-Powered Analysis**
+
+  * Provides useful insights about discovered positions and their relevance.
+
+* 🌐 **Web-Based Interface**
+
+  * Built with Streamlit for a simple and interactive user experience.
 
 ---
 
-## Architecture
+## 🏗️ How It Works
 
 ```text
-                         Resume
+                ┌──────────────────────┐
+                │      User Resume     │
+                │      PDF / DOCX      │
+                └──────────┬───────────┘
                            │
                            ▼
-                 ┌──────────────────┐
-                 │ Resume Reader    │
-                 │ PDF / DOCX       │
-                 └────────┬─────────┘
-                          │
-                          ▼
-                 ┌──────────────────┐
-                 │ Analyzer Chain   │
-                 │ Google Gemini    │
-                 └────────┬─────────┘
-                          │
-                  Candidate Profile
-                  + Search Queries
-                          │
-                          ▼
-                 ┌──────────────────┐
-                 │ Job Search Agent │
-                 │ Gemini + Tavily  │
-                 └────────┬─────────┘
-                          │
-                       Job URLs
-                          │
-                          ▼
-                 ┌──────────────────┐
-                 │ Job Scraper      │
-                 │ Agent            │
-                 │ Gemini + Tool    │
-                 └────────┬─────────┘
-                          │
-                   Structured Jobs
-                          │
-                          ▼
-               ┌──────────────────────┐
-               │ Job Result Processor │
-               │ Python               │
-               └──────────┬───────────┘
-                          │
-             ┌────────────┼────────────┐
-             │            │            │
-          Normalize   Deduplicate    Sort
-             │            │            │
-             └────────────┼────────────┘
-                          │
-                          ▼
-                    Final Results
-                          │
-                          ▼
-                    Streamlit UI
+                ┌──────────────────────┐
+                │    Resume Reader     │
+                │  Extract Candidate   │
+                │      Information     │
+                └──────────┬───────────┘
+                           │
+                           ▼
+                ┌──────────────────────┐
+                │   Multi-Agent AI     │
+                │      Pipeline        │
+                └──────────┬───────────┘
+                           │
+             ┌─────────────┼─────────────┐
+             ▼             ▼             ▼
+        ┌─────────┐   ┌─────────┐   ┌─────────┐
+        │Research │   │Analyzer │   │ Matcher │
+        │  Agent  │   │  Agent  │   │  Agent  │
+        └────┬────┘   └────┬────┘   └────┬────┘
+             │             │             │
+             └─────────────┼─────────────┘
+                           ▼
+                ┌──────────────────────┐
+                │   Job Opportunities  │
+                │   + AI Analysis      │
+                └──────────────────────┘
+```
 
+---
 
+## 🧠 Multi-Agent Architecture
 
-Project Structure
+CareerLens separates the job-search workflow into specialized tasks.
 
+### 📄 Resume Reader
 
-resume-job-matcher/
+Extracts useful information from the uploaded resume, including:
+
+* Skills
+* Experience
+* Education
+* Technologies
+* Projects
+* Professional background
+
+### 🔎 Research Agent
+
+Researches job opportunities relevant to the candidate's profile.
+
+### 🧠 Analyzer Agent
+
+Analyzes job descriptions and identifies important requirements, technologies, responsibilities, and qualifications.
+
+### 🎯 Matching / Recommendation Layer
+
+Compares the candidate's profile with researched opportunities and helps identify the most relevant positions.
+
+---
+
+## 🛠️ Tech Stack
+
+### AI & LLM
+
+* Python
+* LangChain
+* Groq
+* LLM-based agents
+
+### Backend / Application
+
+* Streamlit
+* Python
+
+### Search & Research
+
+* Tavily
+* Web-based job research
+
+### Document Processing
+
+* PDF Resume Processing
+* DOCX Resume Processing
+
+### Configuration
+
+* Pydantic Settings
+* Python-dotenv
+* Environment Variables
+
+### Deployment
+
+* Streamlit Cloud
+* GitHub
+
+---
+
+## 📁 Project Structure
+
+```text
+multi-agent-job-finder/
 │
-├── README.md
+├── app.py
 ├── requirements.txt
-├── requirements-dev.txt
-├── .env
-├── .env.example
+├── README.md
 ├── .gitignore
 │
 ├── data/
 │   └── sample_resumes/
 │
-├── src/
-│   └── resume_job_matcher/
-│       │
-│       ├── __init__.py
-│       ├── config.py
-│       ├── pipeline.py
-│       │
-│       ├── tools/
-│       │   ├── __init__.py
-│       │   ├── resume_reader.py
-│       │   └── scrape_url.py
-│       │
-│       ├── chains/
-│       │   ├── __init__.py
-│       │   └── analyzer.py
-│       │
-│       ├── agents/
-│       │   ├── __init__.py
-│       │   ├── job_search_agent.py
-│       │   └── job_scraper_agent.py
-│       │
-│       └── processors/
-│           ├── __init__.py
-│           └── job_result_processor.py
-│
-├── app.py
-│
-└── tests/
-    ├── __init__.py
+└── src/
+    │
+    ├── pipeline.py
+    ├── config.py
+    │
+    ├── chains/
+    │   └── analyzer.py
+    │
     └── tools/
-        ├── __init__.py
-        └── test_resume_reader.py
+        └── resume_reader.py
+```
+
+---
+
+## ⚙️ Installation
+
+### 1. Clone the repository
+
+```bash
+git clone https://github.com/HR-Builds/Multi-Agent-Job-Finder.git
+```
+
+### 2. Navigate to the project
+
+```bash
+cd Multi-Agent-Job-Finder
+```
+
+### 3. Create a virtual environment
+
+```bash
+python -m venv venv
+```
+
+### 4. Activate the environment
+
+#### Windows
+
+```bash
+venv\Scripts\activate
+```
+
+### 5. Install dependencies
+
+```bash
+pip install -r requirements.txt
+```
+
+---
+
+## 🔐 Environment Variables
+
+Create a `.env` file in the project root:
+
+```env
+GROQ_API_KEY=your_groq_api_key
+TAVILY_API_KEY=your_tavily_api_key
+
+MODEL_NAME=openai/gpt-oss-120b
+TEMPERATURE=0.7
+MAX_SEARCH_RESULTS=5
+```
+
+⚠️ **Never commit your `.env` file or API keys to GitHub.**
+
+For Streamlit Cloud deployment, add the required secrets through the application's **Secrets** settings.
+
+---
+
+## ▶️ Run Locally
+
+Start the Streamlit application:
+
+```bash
+streamlit run app.py
+```
+
+Then open:
+
+```text
+http://localhost:8501
+```
+
+---
+
+## ☁️ Deployment
+
+CareerLens is deployed using **Streamlit Cloud**.
+
+Live application:
+
+https://careenlens.streamlit.app/
+
+The application uses environment secrets for API credentials, keeping sensitive keys outside the public repository.
+
+---
+
+## 🎯 Project Goals
+
+CareerLens was created to explore and demonstrate practical implementation of:
+
+* Multi-agent AI systems
+* Agentic workflows
+* LLM-powered research
+* Resume understanding
+* AI-based job matching
+* LangChain
+* Tool-using AI agents
+* AI application deployment
+* Streamlit development
+
+---
+
+## 🔮 Future Improvements
+
+Potential future improvements include:
+
+* 🔐 User authentication
+* 💾 Job history and saved jobs
+* 📌 Bookmark opportunities
+* 📊 Advanced candidate-job scoring
+* 🧑‍💼 LinkedIn profile integration
+* 📧 Job alerts
+* 🗂️ Personalized job dashboard
+* 📈 Career skill-gap analysis
+* 📝 AI-generated cover letters
+* 📄 AI-powered resume improvement
+* 🎯 Personalized career recommendations
+* 🔄 Continuous job monitoring
+
+---
+
+## 🔒 Security
+
+API keys and other sensitive credentials should never be hard-coded into the application.
+
+CareerLens uses environment variables locally and deployment secrets in Streamlit Cloud.
+
+Make sure `.env` is included in `.gitignore`.
+
+---
+
+## 👨‍💻 Author
+
+**Hassan Rashid**
+
+AI / Python Developer
+
+### Skills & Interests
+
+* Python
+* LangChain
+* RAG Systems
+* AI Chatbots
+* FastAPI
+* Agentic AI
+* Multi-Agent Systems
+
+### 🔗 Connect
+
+* GitHub: https://github.com/HR-Builds
+* LinkedIn: http://www.linkedin.com/in/hassan-rashid-a325883aa
+
+---
+
+## ⭐ Support
+
+If you find CareerLens interesting, consider giving the repository a ⭐ on GitHub.
+
+**CareerLens — Search smarter. Match better. Build your career with AI.**
