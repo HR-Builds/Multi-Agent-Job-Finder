@@ -11,7 +11,7 @@ class Settings(BaseSettings):
     GROQ_API_KEY: str
     MODEL_NAME: str = "openai/gpt-oss-120b"
     TEMPERATURE: float = 0.7
-    MAX_SEARCH_RESULTS: int = 5
+    MAX_SEARCH_RESULTS: int = 3
 
     # Search Configuration
     TAVILY_API_KEY: str
