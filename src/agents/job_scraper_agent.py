@@ -1,4 +1,4 @@
-from langchain_google_genai import ChatGoogleGenerativeAI
+from langchain_groq import ChatGroq
 from langgraph.prebuilt import create_react_agent
 
 from src.config import settings
@@ -11,9 +11,9 @@ from src.tools.scrape_url import scrape_url
 # LLM - Google Gemini
 # ---------------------------------------------------------
 
-llm = ChatGoogleGenerativeAI(
-    model=settings.MODEL_NAME,
-    google_api_key=settings.GOOGLE_API_KEY,
+llm = ChatGroq(
+    model="openai/gpt-oss-120b",
+    groq_api_key=settings.GROQ_API_KEY,
     temperature=0.1,
 )
 

@@ -1,112 +1,451 @@
-from langchain_google_genai import ChatGoogleGenerativeAI
+from typing import Any
+
+from langchain_core.messages import AIMessage
 from langchain_tavily import TavilySearch
-from langgraph.prebuilt import create_react_agent
 
 from src.config import settings
 
 
-# ---------------------------------------------------------
-# LLM - Google Gemini
-# ---------------------------------------------------------
-
-llm = ChatGoogleGenerativeAI(
-    model=settings.MODEL_NAME,
-    google_api_key=settings.GOOGLE_API_KEY,
-    temperature=settings.TEMPERATURE,
-)
-
-
-# ---------------------------------------------------------
-# Tavily Search Tool
-# ---------------------------------------------------------
+# =========================================================
+# TAVILY SEARCH
+# =========================================================
 
 tavily_search = TavilySearch(
-   #  max_results = user_selected_results,
-    max_results = settings.MAX_SEARCH_RESULTS,
+    max_results=5,
     topic="general",
     search_depth="basic",
     tavily_api_key=settings.TAVILY_API_KEY,
 )
 
 
-# ---------------------------------------------------------
-# Agent Instructions
-# ---------------------------------------------------------
+# =========================================================
+# JOB SEARCH AGENT
+# =========================================================
 
-SYSTEM_PROMPT = """
-You are a job search specialist.
+class JobSearchAgent:
+    """
+    Direct Tavily job-search agent.
 
-Your ONLY task is to find relevant and real job posting URLs
-using the Tavily web search tool.
+    We intentionally DO NOT use create_react_agent()
+    here.
 
-The user will provide:
-- candidate role
-- experience level
-- skills
-- location
-- optimized search queries
+    Why?
 
-Use the provided search queries as your primary search strategy.
+    GPT-OSS was previously trying to call unavailable tools
+    such as "open_file", causing:
 
-IMPORTANT RULES:
+        Tool call validation failed
 
-1. Use Tavily to search the web.
+    Tavily is now called directly, which makes the search
+    pipeline much more reliable and predictable.
+    """
 
-2. Search for REAL job openings only.
+    def invoke(
+        self,
+        input_data: dict[str, Any],
+    ) -> dict[str, Any]:
 
-3. Prefer:
-   - company career pages
-   - legitimate job boards
-   - recruitment platforms
+        messages = input_data.get(
+            "messages",
+            []
+        )
 
-4. Avoid:
-   - tutorials
-   - blogs
-   - courses
-   - documentation
-   - GitHub repositories
-   - news articles
-   - generic career advice
+        if not messages:
+            return {
+                "messages": [
+                    AIMessage(
+                        content=""
+                    )
+                ]
+            }
 
-5. Use the provided search queries without unnecessarily
-   changing them.
+        last_message = messages[-1]
 
-6. Only modify a query if the search produces poor results.
+        if isinstance(last_message, dict):
 
-7. Focus on jobs matching the candidate's:
-   - role
-   - experience level
-   - skills
-   - technologies
-   - location
+            query_text = str(
+                last_message.get(
+                    "content",
+                    ""
+                )
+            )
 
-8. Remove duplicate URLs.
+        else:
 
-9. Do not invent job information.
+            query_text = str(
+                getattr(
+                    last_message,
+                    "content",
+                    last_message,
+                )
+            )
 
-10. Do not guess or fabricate posting dates.
+        # -------------------------------------------------
+        # Extract queries
+        # -------------------------------------------------
 
-11. At this stage, DO NOT deeply analyze job descriptions.
+        queries = self._extract_queries(
+            query_text
+        )
 
-12. Return concise search results containing only:
-   - job title if available
-   - company if available
-   - URL
-   - short Tavily snippet
+        if not queries:
 
-13. The URLs will be passed to a separate Job Scraper Agent
-    for detailed extraction.
+            queries = [
+                query_text[:400]
+            ]
 
-Keep your final response concise.
-"""
+        # Maximum 4 searches
+        queries = queries[:4]
+
+        print(
+            f"  → Running {len(queries)} Tavily searches..."
+        )
+
+        all_results = []
+
+        # -------------------------------------------------
+        # Run Tavily searches
+        # -------------------------------------------------
+
+        for index, query in enumerate(
+            queries,
+            start=1,
+        ):
+
+            query = query.strip()
+
+            if not query:
+                continue
+
+            print(
+                f"  → Search {index}: {query}"
+            )
+
+            try:
+
+                result = tavily_search.invoke(
+                    {
+                        "query": query
+                    }
+                )
+
+            except Exception as exc:
+
+                print(
+                    f"  ⚠ Search failed: {exc}"
+                )
+
+                continue
+
+            if not isinstance(
+                result,
+                dict,
+            ):
+                continue
+
+            results = result.get(
+                "results",
+                []
+            )
+
+            if not isinstance(
+                results,
+                list,
+            ):
+                continue
+
+            for item in results:
+
+                if not isinstance(
+                    item,
+                    dict,
+                ):
+                    continue
+
+                title = str(
+                    item.get(
+                        "title",
+                        ""
+                    )
+                ).strip()
+
+                url = str(
+                    item.get(
+                        "url",
+                        ""
+                    )
+                ).strip()
+
+                content = str(
+                    item.get(
+                        "content",
+                        ""
+                    )
+                ).strip()
+
+                if not url:
+                    continue
+
+                # Compress snippet aggressively
+                content = " ".join(
+                    content.split()
+                )
+
+                if len(content) > 250:
+
+                    content = (
+                        content[:250]
+                        + "..."
+                    )
+
+                all_results.append(
+                    {
+                        "title": title,
+                        "url": url,
+                        "content": content,
+                    }
+                )
+
+        # -------------------------------------------------
+        # Remove duplicate URLs
+        # -------------------------------------------------
+
+        unique_results = []
+
+        seen_urls = set()
+
+        for result in all_results:
+
+            url = result.get(
+                "url",
+                ""
+            ).strip()
+
+            if not url:
+                continue
+
+            normalized_url = url.rstrip(
+                "/"
+            ).lower()
+
+            if normalized_url in seen_urls:
+                continue
+
+            seen_urls.add(
+                normalized_url
+            )
+
+            unique_results.append(
+                result
+            )
+
+        # -------------------------------------------------
+        # Remove obvious non-job pages
+        # -------------------------------------------------
+
+        filtered_results = []
+
+        blocked_words = [
+            "blog",
+            "article",
+            "news",
+            "tutorial",
+            "course",
+            "salary",
+            "guide",
+            "resources",
+            "documentation",
+            "docs",
+        ]
+
+        for result in unique_results:
+
+            title = result.get(
+                "title",
+                ""
+            ).lower()
+
+            url = result.get(
+                "url",
+                ""
+            ).lower()
+
+            combined = (
+                title
+                + " "
+                + url
+            )
+
+            blocked = any(
+                word in combined
+                for word in blocked_words
+            )
+
+            if blocked:
+                continue
+
+            filtered_results.append(
+                result
+            )
+
+        # -------------------------------------------------
+        # Keep maximum 15 candidates
+        # -------------------------------------------------
+
+        filtered_results = (
+            filtered_results[:15]
+        )
+
+        # -------------------------------------------------
+        # Build concise output
+        # -------------------------------------------------
+
+        output_lines = []
+
+        for index, result in enumerate(
+            filtered_results,
+            start=1,
+        ):
+
+            title = result.get(
+                "title",
+                "Unknown Job"
+            )
+
+            url = result.get(
+                "url",
+                ""
+            )
+
+            snippet = result.get(
+                "content",
+                ""
+            )
+
+            output_lines.append(
+                f"{index}. {title}\n"
+                f"URL: {url}\n"
+                f"Snippet: {snippet}"
+            )
+
+        final_content = "\n\n".join(
+            output_lines
+        )
+
+        if not final_content:
+
+            final_content = (
+                "No relevant job postings "
+                "were found."
+            )
+
+        print(
+            f"  ✓ Raw results: "
+            f"{len(all_results)}"
+        )
+
+        print(
+            f"  ✓ Unique results: "
+            f"{len(unique_results)}"
+        )
+
+        print(
+            f"  ✓ Job candidates: "
+            f"{len(filtered_results)}"
+        )
+
+        return {
+            "messages": [
+                AIMessage(
+                    content=final_content
+                )
+            ]
+        }
+
+    # =====================================================
+    # QUERY EXTRACTION
+    # =====================================================
+
+    @staticmethod
+    def _extract_queries(
+        text: str,
+    ) -> list[str]:
+
+        queries = []
+
+        if not text:
+            return queries
+
+        marker = "Search queries:"
+
+        if marker not in text:
+
+            return queries
+
+        section = text.split(
+            marker,
+            1
+        )[1]
+
+        # Stop before other instructions
+        stop_markers = [
+            "\n\nUse Tavily",
+            "\n\nReturn ONLY",
+            "\n\nPrefer",
+            "\n\nExclude",
+        ]
+
+        for marker_text in stop_markers:
+
+            if marker_text in section:
+
+                section = section.split(
+                    marker_text,
+                    1
+                )[0]
+
+                break
+
+        for line in section.splitlines():
+
+            line = line.strip()
+
+            if not line:
+                continue
+
+            line = line.lstrip(
+                "-•0123456789. "
+            ).strip()
+
+            if not line:
+                continue
+
+            queries.append(
+                line
+            )
+
+        # Remove duplicates
+        unique_queries = []
+
+        for query in queries:
+
+            query_lower = query.lower()
+
+            if query_lower in [
+                q.lower()
+                for q in unique_queries
+            ]:
+                continue
+
+            unique_queries.append(
+                query
+            )
+
+        return unique_queries[:4]
 
 
-# ---------------------------------------------------------
-# ReAct Agent
-# ---------------------------------------------------------
+# =========================================================
+# EXPORT
+# =========================================================
 
-job_search_agent = create_react_agent(
-    model=llm,
-    tools=[tavily_search],
-    prompt=SYSTEM_PROMPT,
-)
+job_search_agent = JobSearchAgent()

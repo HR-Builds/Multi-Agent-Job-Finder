@@ -8,8 +8,8 @@ load_dotenv(dotenv_path=BASE_DIR / ".env")
 
 class Settings(BaseSettings):
     # Gemini Configuration
-    GOOGLE_API_KEY: str
-    MODEL_NAME: str = "gemini-3.6-flash"
+    GROQ_API_KEY: str
+    MODEL_NAME: str = "openai/gpt-oss-120b"
     TEMPERATURE: float = 0.7
     MAX_SEARCH_RESULTS: int = 5
 
